@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Post;
 use Illuminate\Http\Request;
 
 class UserController extends Controller
@@ -12,7 +13,11 @@ class UserController extends Controller
      */
     public function index()
     {
-        //
+        $user = auth()->user();
+        $skills = $user->skills;
+        $languages = $user->programmingLanguages;
+        $posts = Post::with('user')->orderBy('created_at', 'desc')->get();
+        return view('dashboard', compact('user', 'skills' , 'languages' , 'posts'));
     }
 
     /**

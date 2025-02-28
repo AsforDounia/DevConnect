@@ -38,28 +38,29 @@ class RegisteredUserController extends Controller
      */
     public function store(Request $request): RedirectResponse
     {
-
         $validator = Validator::make($request->all(), [
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'profile_picture' => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'skills' => 'nullable|array',
-            'skills.*' => 'nullable|string|max:255',
+            'skills.*' => 'nullable|exists:skills,id',
             'programming_languages' => 'nullable|array',
-            'programming_languages.*' => 'nullable|string|max:255',
-            'addProgrammingLanguages' => 'nullable|array',
-            'addProgrammingLanguages.*' => 'nullable|string|max:255',
+            'programming_languages.*' => 'nullable|exists:programming_languages,id',
+            'addSkills' => 'nullable|array',
+            'addSkills.*' => 'nullable|string|max:255',
+            'addProgramming_languages' => 'nullable|array',
+            'addProgramming_languages.*' => 'nullable|string|max:255',
             'projects' => 'nullable|array',
             'projects.*.name' => 'nullable|string|max:255',
-            'projects.*.url' => 'nullable|url|max:255',
-            'projects.*.description' => 'nullable|string|max:500',
+            'projects.*.url' => 'nullable|string|max:255',
+            'projects.*.description' => 'nullable|string',
             'certifications' => 'nullable|array',
             'certifications.*.name' => 'nullable|string|max:255',
-            'certifications.*.url' => 'nullable|url|max:255',
-            'certifications.*.description' => 'nullable|string|max:500',
+            'certifications.*.url' => 'nullable|string|max:255',
+            'certifications.*.description' => 'nullable|string',
         ]);
-        dd($validator);
+// dd($validator);
         if ($validator->fails()) {
             return back()->withErrors($validator)->withInput();
         }
@@ -67,7 +68,7 @@ class RegisteredUserController extends Controller
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
-            'password' => Hash::make($request->password),  // Hash the password
+            'password' => Hash::make($request->password),
             'profile_picture' => $request->file('profile_picture') ? $request->file('profile_picture')->store('profile_pictures','public') : null,
         ]);
 
@@ -77,22 +78,52 @@ class RegisteredUserController extends Controller
 
         if ($request->has('addSkills')) {
             foreach ($request->input('addSkills') as $newSkill) {
-                $skill = Skill::firstOrCreate(['name' => $newSkill]);
-                $user->skills()->attach($skill->id);
+                if (!empty($newSkill)) {
+                    $skill = Skill::firstOrCreate(['name' => $newSkill]);
+                    $user->skills()->attach($skill->id);
+                }
             }
         }
 
-
         if ($request->has('programming_languages')) {
-            $user->languages()->sync($request->input('programming_languages'));
+            $user->programmingLanguages()->sync($request->input('programming_languages'));
         }
 
         if ($request->has('addProgramming_languages')) {
-            foreach ($request->input('addProgrammingLanguages') as $newLanguage) {
-                $language = ProgrammingLanguage::firstOrCreate(['name' => $newLanguage]);
-                $user->languages()->attach($language->id);
+            foreach ($request->input('addProgramming_languages') as $newLanguage) {
+                if (!empty($newLanguage)) {
+                    $language = ProgrammingLanguage::firstOrCreate(['name' => $newLanguage]);
+                    $user->programmingLanguages()->attach($language->id);
+                }
             }
         }
+
+        if ($request->has('projects')) {
+            foreach ($request->input('projects') as $project) {
+                if (!empty($project['name']) || !empty($project['url']) || !empty($project['description'])) {
+                    $user->projects()->create([
+                        'name' => $project['name'] ?? '',
+                        'url' => $project['url'] ?? '',
+                        'description' => $project['description'] ?? '',
+                        'user_id' => $user->id,
+                    ]);
+                }
+            }
+        }
+
+        if ($request->has('certifications')) {
+            foreach ($request->input('certifications') as $cert) {
+                if (!empty($cert['name']) || !empty($cert['url']) || !empty($cert['description'])) {
+                    $user->certifications()->create([
+                        'name' => $cert['name'] ?? '',
+                        'url' => $cert['url'] ?? '',
+                        'description' => $cert['description'] ?? '',
+                        'user_id' => $user->id,
+                    ]);
+                }
+            }
+        }
+
 
 
 

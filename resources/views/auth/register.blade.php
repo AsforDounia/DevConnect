@@ -61,7 +61,7 @@
                 </h1>
 
                 <!-- Skills Selection -->
-                <div class="mt-4" x-data="{ selectedSkills: {{ json_encode(old('skills', [])) }}, newSkill: '' }">
+                <div class="mt-4" x-data="{ selectedSkills: {{ json_encode(old('skills', [])) }}, customSkills: [], newSkill: '' }">
                     <x-input-label :value="__('Skills')" />
                     <select
                         name="skills[]"
@@ -78,21 +78,23 @@
 
                     <!-- Add New Skill Input -->
                     <div class="mt-2 flex">
-                        <x-text-input name="addSkills[]" type="text" class="block w-full" x-model="newSkill" placeholder="Enter a new skill" />
+                        <x-text-input type="text" class="block w-full" x-model="newSkill" placeholder="Enter a new skill" />
                         <button type="button" class="ml-2 px-4 py-2 bg-blue-500 text-white rounded"
                                 @click="if(newSkill.trim() !== '') {
-                                    selectedSkills.push({ id: newSkill, name: newSkill }); // Add the new skill to the selectedSkills array
-                                    $refs.skillInput.value = newSkill; // Ensure the input value gets transferred to the hidden input field
-                                    newSkill = ''; // Clear the input field
+                                    customSkills.push(newSkill);
+                                    selectedSkills.push({ id: 'custom-'+newSkill, name: newSkill });
+                                    newSkill = '';
                                 }">
                             Add
                         </button>
                     </div>
 
-                    <x-input-error :messages="$errors->get('skills')" class="mt-2" />
+                    <!-- Hidden inputs for custom skills -->
+                    <template x-for="skill in customSkills" :key="skill">
+                        <input type="hidden" name="addSkills[]" :value="skill" />
+                    </template>
 
-                    <!-- Hidden input for addSkills -->
-                    <input type="hidden" x-ref="skillInput" name="addSkills[]" :value="newSkill" />
+                    <x-input-error :messages="$errors->get('skills')" class="mt-2" />
 
                     <!-- Display Selected Skills -->
                     <div class="mt-2">
@@ -106,19 +108,27 @@
                             <template x-for="(skill, index) in selectedSkills" :key="skill.id">
                                 <div class="inline-flex items-center px-4 py-1 bg-blue-100 text-blue-800 rounded-full mr-2 mt-2">
                                     <span x-text="skill.name"></span>
-                                    <button type="button" class="ml-2 text-red-500" @click="selectedSkills.splice(index, 1)">×</button>
+                                    <button type="button" class="ml-2 text-red-500" @click="
+                                        selectedSkills.splice(index, 1);
+                                        if(skill.id.toString().startsWith('custom-')) {
+                                            const skillName = skill.id.substring(7);
+                                            const skillIndex = customSkills.indexOf(skillName);
+                                            if(skillIndex !== -1) {
+                                                customSkills.splice(skillIndex, 1);
+                                            }
+                                        }
+                                    ">×</button>
                                 </div>
                             </template>
                         </div>
                     </div>
                 </div>
 
-
                 <!-- Programming Languages -->
                 <div class="mt-4"
                     x-data="{
                         selectedLanguages: {{ json_encode(old('programming_languages', [])) }},
-                        availableLanguages: {{ json_encode($languages) }},
+                        customLanguages: [],
                         newLanguage: ''
                     }">
 
@@ -137,22 +147,21 @@
 
                     <p class="text-sm text-gray-500 mt-1">Hold Ctrl (or Cmd on Mac) to select multiple languages</p>
                     <div class="mt-2 flex">
-                        <x-text-input name="" type="text" class="block w-full" x-model="newLanguage" placeholder="Enter a new language" />
+                        <x-text-input type="text" class="block w-full" x-model="newLanguage" placeholder="Enter a new language" />
                         <button type="button" class="ml-2 px-4 py-2 bg-blue-500 text-white rounded"
                                 @click="if(newLanguage.trim() !== '') {
-                                    // Add the new language to the selected languages list
-                                    selectedLanguages.push({ id: newLanguage, name: newLanguage });
-                                    // Push the new language to the addProgramming_languages array
-                                    $refs.languageInput.push(newLanguage);
-                                    newLanguage = ''; // Clear the input field
+                                    customLanguages.push(newLanguage);
+                                    selectedLanguages.push({ id: 'custom-'+newLanguage, name: newLanguage });
+                                    newLanguage = '';
                                 }">
                             Add
                         </button>
                     </div>
 
-                    <!-- Hidden input for addProgramming_languages -->
-                    <input type="hidden" x-ref="languageInput" name="addProgramming_languages[]" :value="newLanguage" />
-
+                    <!-- Hidden inputs for custom languages -->
+                    <template x-for="language in customLanguages" :key="language">
+                        <input type="hidden" name="addProgramming_languages[]" :value="language" />
+                    </template>
 
                     <x-input-error :messages="$errors->get('programming_languages')" class="mt-2" />
 
@@ -168,43 +177,60 @@
                             <template x-for="(language, index) in selectedLanguages" :key="language.id">
                                 <div class="inline-flex items-center px-4 py-1 bg-green-100 text-green-800 rounded-full mr-2 mt-2">
                                     <span x-text="language.name"></span>
-                                    <button type="button" class="ml-2 text-red-500" @click="selectedLanguages.splice(index, 1)">×</button>
+                                    <button type="button" class="ml-2 text-red-500" @click="
+                                        selectedLanguages.splice(index, 1);
+                                        if(language.id.toString().startsWith('custom-')) {
+                                            const langName = language.id.substring(7);
+                                            const langIndex = customLanguages.indexOf(langName);
+                                            if(langIndex !== -1) {
+                                                customLanguages.splice(langIndex, 1);
+                                            }
+                                        }
+                                    ">×</button>
                                 </div>
                             </template>
                         </div>
                     </div>
                 </div>
 
-                <!-- Projects -->
-                <div class="mt-4" id="projects-container" x-data="{ projects: {{ json_encode(old('projects', [])) }} }">
+                {{-- Projects section --}}
+                <div class="mt-4" id="projects-container" x-data="{ projects: @json(old('projects', [])) }">
                     <x-input-label :value="__('Projects')" />
                     <template x-for="(project, index) in projects" :key="index">
                         <div class="mt-2">
-                            <x-text-input class="block w-full" type="text" x-model="projects[index].name" name="projects[][name]" placeholder="Project Name" />
-                            <x-text-input class="block mt-1 w-full" type="text" x-model="projects[index].url" name="projects[][url]" placeholder="Project URL" />
-                            <textarea class="block mt-1 w-full" x-model="projects[index].description" name="projects[][description]" placeholder="Project Description"></textarea>
-                            <button type="button" class="mt-2 px-2 bg-red-500 text-white" @click="projects.splice(index, 1)">Remove</button>
+                            <input class="block w-full" type="text" x-model="project.name"
+                                x-bind:name="'projects[' + index + '][name]'" placeholder="Project Name" />
+                            <input class="block mt-1 w-full" type="text" x-model="project.url"
+                                x-bind:name="'projects[' + index + '][url]'" placeholder="Project URL" />
+                            <textarea class="block mt-1 w-full" x-model="project.description"
+                                x-bind:name="'projects[' + index + '][description]'" placeholder="Project Description"></textarea>
+                            <button type="button" class="mt-2 px-2 bg-red-500 text-white"
+                                @click="projects.splice(index, 1)">Remove</button>
                         </div>
                     </template>
-                    <button type="button" class="mt-2 px-4 py-2 bg-blue-500 text-white" @click="projects.push({})">Add Another Project</button>
+                    <button type="button" class="mt-2 px-4 py-2 bg-blue-500 text-white"
+                        @click="projects.push({ name: '', url: '', description: '' })">Add Another Project</button>
                 </div>
 
 
-                <!-- Certifications -->
-                <div class="mt-4" id="certification-container" x-data="{ certifications: {{ json_encode(old('certification', [])) }} }">
+                {{--  Certifications --}}
+                <div class="mt-4" id="certification-container" x-data="{ certifications: @json(old('certifications', [])) }">
                     <x-input-label :value="__('Certifications')" />
                     <template x-for="(certification, index) in certifications" :key="index">
                         <div class="mt-2">
-                            <x-text-input class="block w-full" type="text" x-model="certifications[index].name" name="certification[][name]" placeholder="Certification Name" />
-                            <x-text-input class="block mt-1 w-full" x-model="certifications[index].url" name="certification[][url]" placeholder="Certification URL" />
-                            <textarea class="block mt-1 w-full" x-model="certifications[index].description" name="certification[][description]" placeholder="Certification Description"></textarea>
-                            <button type="button" class="mt-2 px-2 bg-red-500 text-white" @click="certifications.splice(index, 1)">Remove</button>
+                            <input class="block w-full" type="text" x-model="certification.name"
+                                x-bind:name="'certifications[' + index + '][name]'" placeholder="Certification Name" />
+                            <input class="block mt-1 w-full" type="text" x-model="certification.url"
+                                x-bind:name="'certifications[' + index + '][url]'" placeholder="Certification URL" />
+                            <textarea class="block mt-1 w-full" x-model="certification.description"
+                                x-bind:name="'certifications[' + index + '][description]'" placeholder="Certification Description"></textarea>
+                            <button type="button" class="mt-2 px-2 bg-red-500 text-white"
+                                @click="certifications.splice(index, 1)">Remove</button>
                         </div>
                     </template>
-                    <button type="button" class="mt-2 px-4 py-2 bg-blue-500 text-white" @click="certifications.push({})">Add Another Certification</button>
+                    <button type="button" class="mt-2 px-4 py-2 bg-blue-500 text-white"
+                        @click="certifications.push({name: '', url: '', description: ''})">Add Another Certification</button>
                 </div>
-
-
             </div>
         </div>
 

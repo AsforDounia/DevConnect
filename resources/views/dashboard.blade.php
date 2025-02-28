@@ -4,12 +4,6 @@
             &lt;{{ __('DevConnect/') }}&gt;
         </h2>
     </x-slot>
-    @if(session('success'))
-        <div class="alert alert-success">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <!-- Main Content -->
     <div class="max-w-7xl mx-auto pt-24 px-4 bg-gray-50 min-h-screen">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
@@ -163,7 +157,25 @@
 
                 <!-- Posts -->
                 @forelse ($posts as $post)
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100" x-data="{ showEditForm: false }">
+                        @if($post->user_id == Auth::id())
+                            <div class="flex items-center justify-end p-4 space-x-4">
+                                <!-- Edit Button -->
+                                <button @click="showEditForm = !showEditForm" class="text-blue-500 hover:text-blue-700">
+                                    {{-- <x-far-edit /> --}}
+                                    edit
+                                </button>
+                                <!-- Delete Button -->
+                                <form action="{{ route('posts.destroy', $post) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this post?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-500 hover:text-red-700">
+                                        {{-- <x-fas-trash /> --}}
+                                        delete
+                                    </button>
+                                </form>
+                            </div>
+                        @endif
                         <div class="p-6">
                             <div class="flex items-center justify-between">
                                 <div class="flex items-center space-x-3">
@@ -187,12 +199,12 @@
                                 </div>
                             @endif
                             @if($post->hashtags)
-                            <div class="mt-2 flex flex-wrap gap-2">
-                                @foreach(json_decode($post->hashtags) as $hashtag)
-                                    <span class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium">#{{ $hashtag }}</span>
-                                @endforeach
-                            </div>
-                        @endif
+                                <div class="mt-2 flex flex-wrap gap-2">
+                                    @foreach(json_decode($post->hashtags) as $hashtag)
+                                        <span class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium">#{{ $hashtag }}</span>
+                                    @endforeach
+                                </div>
+                            @endif
                             <div class="mt-6">
                                 <p class="text-gray-700">{{ $post->content }}</p>
                                 <div>
@@ -221,7 +233,43 @@
                                 </div>
                             </div>
                         </div>
+
+
+                        <div x-show="showEditForm">
+                            <div class="fixed -inset-20 mt-0 bg-gray-500  flex justify-center items-center z-50">
+                                <div class="bg-white border-2 w-1/2 p-12">
+                                        <h3 class="text-lg font-bold text-center m-2">Update Post</h3>
+                                    <form action="{{ route('posts.update', $post) }}" method="POST" enctype="multipart/form-data" >
+                                        @csrf
+                                        @method('PUT')
+
+                                        <!-- Title -->
+                                        <input type="text" name="title" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500" value="{{ $post->title }}" required>
+
+                                        <!-- Content -->
+                                        <textarea name="content" rows="4" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4" required>{{ $post->content }}</textarea>
+
+                                        <!-- Hashtags -->
+                                        <input type="text" name="hashtags" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4" value="{{ implode(',', json_decode($post->hashtags)) }}" required>
+
+                                        <!-- Image -->
+                                        <div class="mt-4">
+                                            <label for="image" class="block text-gray-600">Upload Image (optional)</label>
+                                            <input type="file" name="image" id="image" class="w-full p-2 border rounded-xl focus:ring-blue-500 mt-2">
+                                        </div>
+
+                                        <div class="mt-4 flex justify-between">
+                                            <button type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600">Update Post</button>
+                                            <button type="button" @click="showEditForm = false" class="text-gray-500 hover:text-gray-700">Cancel</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
                     </div>
+
+
+
                 @empty
                     <div class="flex justify-center items-center h-screen"> No posts found.</div>
                 @endforelse
@@ -297,3 +345,30 @@
 
 
 
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Succès!',
+                text: "{{ session('success') }}",
+                timer: 3000,
+                showConfirmButton: true
+            }).then(() => {
+                @php session()->forget('success'); @endphp
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Erreur!',
+                text: "{{ session('error') }}",
+                timer: 4000,
+                showConfirmButton: true
+            }).then(() => {
+                @php session()->forget('error'); @endphp
+            });
+        @endif
+    });
+</script>

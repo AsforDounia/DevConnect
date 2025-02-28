@@ -16,7 +16,7 @@ class UserController extends Controller
         $user = auth()->user();
         $skills = $user->skills;
         $languages = $user->programmingLanguages;
-        $posts = Post::with('user')->orderBy('created_at', 'desc')->get();
+        $posts = Post::with('user')->orderBy('updated_at', 'desc')->get();
         return view('dashboard', compact('user', 'skills' , 'languages' , 'posts'));
     }
 

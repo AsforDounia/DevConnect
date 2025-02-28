@@ -22,6 +22,7 @@ Route::get('/', function () {
 });
 
 Route::get('/dashboard', [UserController::class,'index'])->middleware(['auth', 'verified'])->name('dashboard');
+Route::get('/test', [UserController::class,'test'])->middleware(['auth', 'verified']);
 
 Route::get('/profileTest', function () {
     return view('profile');

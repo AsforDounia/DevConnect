@@ -1,15 +1,8 @@
-<nav x-data="{ open: false }" class="fixed top-0 w-full bg-gray-900 text-white z-50">
+<nav x-data="{ open: false }" class="top-0 w-full bg-gray-900 text-white z-50">
 
         <div class="max-w-7xl mx-auto px-4">
             <div class="flex justify-between items-center h-16">
                 <div class="flex items-center space-x-4">
-                    {{-- <div class="space-x-8 sm:-my-px sm:ms-10 sm:flex text-white">
-                        <x-nav-link>
-                            @if (isset($header))
-                                {{ $header }}
-                            @endif
-                        </x-nav-link>
-                    </div> --}}
 
                         <x-nav-link>
                             @if (isset($header))

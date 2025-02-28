@@ -5,14 +5,14 @@
         </h2>
     </x-slot>
     <!-- Main Content -->
-    <div class="max-w-7xl mx-auto pt-24 px-4 bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto pt-8 px-4 bg-gray-50 min-h-screen">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
             <!-- Profile Card -->
             <div class="lg:col-span-3 space-y-6">
                 <div class="bg-white rounded-2xl shadow-sm overflow-hidden border border-gray-100">
                     <div class="relative">
                         <div class="h-32 bg-gradient-to-br from-blue-500 to-purple-600"></div>
-                        <img src="{{ asset('storage/' . Auth::user()->profile_picture) }}" alt="Profile" class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-24 h-24 rounded-2xl border-4 border-white shadow-lg"/>
+                        <img src="{{ asset('storage/' . $user->profile_picture) }}"  alt="Profile" class="absolute -bottom-8 left-1/2 transform -translate-x-1/2 w-24 h-24 rounded-2xl border-4 border-white shadow-lg"/>
 
                     </div>
                     <div class="pt-12 p-6">
@@ -72,11 +72,11 @@
                         <div class="mt-6 pt-6 border-t border-gray-100">
                             <div class="grid grid-cols-2 gap-4 text-center">
                                 <div class="p-3 rounded-xl bg-gray-50">
-                                    <p class="text-2xl font-bold text-gray-800">487</p>
+                                    <p class="text-2xl font-bold text-gray-800">{{ $user->connections()->count() }}</p>
                                     <p class="text-xs text-gray-500 mt-1">Connections</p>
                                 </div>
                                 <div class="p-3 rounded-xl bg-gray-50">
-                                    <p class="text-2xl font-bold text-gray-800">52</p>
+                                    <p class="text-2xl font-bold text-gray-800">{{ $user->posts()->count() }}</p>
                                     <p class="text-xs text-gray-500 mt-1">Posts</p>
                                 </div>
                             </div>
@@ -114,11 +114,11 @@
             </div>
 
             <!-- Main Feed -->
-            <div class="lg:col-span-6 space-y-6">
+            <div class="lg:col-span-6 space-y-6 mb-4">
                 <!-- Post Creation -->
                 <div x-data="{ showForm: false }" class="bg-white rounded-2xl shadow-sm p-6 border border-gray-100">
                     <div class="flex items-center space-x-4">
-                        <img src="{{ asset('storage/' . Auth::user()->profile_picture) }}" alt="User" class="w-12 h-12 rounded-full"/>
+                        <img src="{{ asset('storage/' . $user->profile_picture) }}" alt="User" class="w-12 h-12 rounded-full"/>
                         <button
                             @click="showForm = !showForm"
                             class="bg-gray-50 hover:bg-gray-100 text-gray-600 text-left rounded-xl px-6 py-4 flex-grow transition-all duration-200 hover:ring-2 hover:ring-blue-100">
@@ -131,16 +131,12 @@
                         <form action="{{ route('posts.store') }}" method="POST" enctype="multipart/form-data">
                             @csrf
 
-                            <!-- Title -->
                             <input type="text" name="title" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500" placeholder="Post Title" required>
 
-                            <!-- Content -->
                             <textarea name="content" rows="4" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4" placeholder="Write your post..." required></textarea>
 
-                            <!-- Hashtags -->
                             <input type="text" name="hashtags" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4" placeholder="Add hashtags (comma separated)" required>
 
-                            <!-- Image -->
                             <div class="mt-4">
                                 <label for="image" class="block text-gray-600">Upload Image (optional)</label>
                                 <input type="file" name="image" id="image" class="w-full p-2 border rounded-xl focus:ring-blue-500 mt-2">
@@ -160,7 +156,7 @@
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100" x-data="{ showEditForm: false }">
                         @if($post->user_id == Auth::id())
                             <div class="flex items-center justify-end p-4 space-x-4">
-                                <!-- Edit Button -->
+
                                 <button @click="showEditForm = !showEditForm" class="text-blue-500 hover:text-blue-700">
                                     {{-- <x-far-edit /> --}}
                                     edit
@@ -207,17 +203,27 @@
                             @endif
                             <div class="mt-6">
                                 <p class="text-gray-700">{{ $post->content }}</p>
-                                <div>
-                                    <img src="{{ asset('storage/' . $post->image) }}" alt="Post Image " class="w-full h-64 object-cover rounded-2xl">
-                                </div>
+                                @if($post->image)
+                                    <div>
+                                        <img src="{{ asset('storage/' . $post->image) }}" alt="Post Image " class="w-full h-64 object-cover rounded-2xl">
+                                    </div>
+                                @else
+                                {{-- <div>
+                                    waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
+                                    </div> --}}
+                                @endif
+
                                 <div class="mt-6 flex items-center justify-between border-t pt-6">
                                     <div class="flex items-center space-x-4">
-                                        <button class="flex items-center space-x-2 text-gray-500 hover:text-blue-500">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
-                                            </svg>
-                                            <span>{{ $post->likes()->count() }}</span>
-                                        </button>
+                                        <button class="like-button flex items-center space-x-2 text-gray-500 hover:text-blue-500" data-post-id="{{ $post->id }}">
+                                            <button class="flex items-center space-x-2 text-gray-500 hover:text-blue-500">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+                                                </svg>
+                                                <span>{{ $post->likes()->count() }}</span>
+                                            </button>
+
+
                                         <button class="flex items-center space-x-2 text-gray-500 hover:text-blue-500">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
@@ -243,16 +249,12 @@
                                         @csrf
                                         @method('PUT')
 
-                                        <!-- Title -->
                                         <input type="text" name="title" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500" value="{{ $post->title }}" required>
 
-                                        <!-- Content -->
                                         <textarea name="content" rows="4" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4" required>{{ $post->content }}</textarea>
 
-                                        <!-- Hashtags -->
                                         <input type="text" name="hashtags" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4" value="{{ implode(',', json_decode($post->hashtags)) }}" required>
 
-                                        <!-- Image -->
                                         <div class="mt-4">
                                             <label for="image" class="block text-gray-600">Upload Image (optional)</label>
                                             <input type="file" name="image" id="image" class="w-full p-2 border rounded-xl focus:ring-blue-500 mt-2">
@@ -273,7 +275,9 @@
                 @empty
                     <div class="flex justify-center items-center h-screen"> No posts found.</div>
                 @endforelse
-
+                <div>
+                    {{ $posts->links() }}
+                </div>
             </div>
 
             <!-- Right Sidebar -->
@@ -345,7 +349,7 @@
 
 
 
-<script>
+{{-- <script>
     document.addEventListener("DOMContentLoaded", function() {
         @if(session('success'))
             Swal.fire({
@@ -371,4 +375,4 @@
             });
         @endif
     });
-</script>
+</script> --}}

@@ -1,10 +1,16 @@
 <?php
 
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\UserController;
+use App\Http\Livewire\CommentSection;
+// use App\Http\Livewire\CommentsSection;
+
+
 
 use Illuminate\Support\Facades\Route;
+use Livewire\Livewire;
 
 /*
 |--------------------------------------------------------------------------
@@ -36,4 +42,9 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::resource('posts', PostController::class);
+Route::resource('comments', CommentController::class);
+
+// Route::get('/CommentSection', CommentSection::class);
+
+
 require __DIR__.'/auth.php';

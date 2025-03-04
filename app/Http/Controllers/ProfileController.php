@@ -37,85 +37,99 @@ class ProfileController extends Controller
      * Update the user's profile information.
      */
 
-    // public function update(ProfileUpdateRequest $request): RedirectResponse
-    // {
-    //     // dd("cc");
-    //     $user = $request->user();
+    public function update(Request $request)
+    {
+        // dd($request);
 
-    //     if ($request->has('name') && $request->has('email')) {
-    //         $user->fill($request->safe()->only(['name', 'email']));
+        $user = $request->user();
 
-    //     }
+        if ($request->has('name') && $request->has('email')) {
+            $user->fill($request->safe()->only(['name', 'email']));
 
-    //     if ($request->hasFile('profile_picture')) {
-    //         if ($user->profile_picture) {
-    //             Storage::delete('public/' . $user->profile_picture);
-    //         }
+        }
+        // githubProfile
+        if ($request->has('githubProfile')) {
+            $user->githubProfile = $request->githubProfile;
+        }
+        // biography
+        if ($request->has('biography')) {
+            $user->biography = $request->biography;
+        }
 
-    //         $path = $request->file('profile_picture')->store('profile_pictures', 'public');
-    //         $user->profile_picture = $path;
-    //     }
 
-    //     if ($request->has('skills')) {
-    //         $user->skills()->sync($request->skills);
-    //     } else {
-    //         $user->skills()->detach();
-    //     }
 
-    //     if ($request->has('addSkills')) {
-    //         foreach ($request->addSkills as $skillName) {
-    //             $skill = Skill::firstOrCreate(['name' => $skillName]);
-    //             if (!$user->skills->contains($skill->id)) {
-    //                 $user->skills()->attach($skill->id);
-    //             }
-    //         }
-    //     }
+        if ($request->hasFile('profile_picture')) {
+            if ($user->profile_picture) {
+                Storage::delete('public/' . $user->profile_picture);
+            }
 
-    //     if ($request->has('programming_languages')) {
-    //         $user->programmingLanguages()->sync($request->programming_languages);
-    //     } else {
-    //         $user->programmingLanguages()->detach();
-    //     }
+            $path = $request->file('profile_picture')->store('profile_pictures', 'public');
+            $user->profile_picture = $path;
+        }
 
-    //     if ($request->has('addProgramming_languages')) {
-    //         foreach ($request->addProgramming_languages as $languageName) {
-    //             $language = ProgrammingLanguage::firstOrCreate(['name' => $languageName]);
-    //             if (!$user->programmingLanguages->contains($language->id)) {
-    //                 $user->programmingLanguages()->attach($language->id);
-    //             }
-    //         }
-    //     }
+        if ($request->has('skills')) {
+            $user->skills()->sync($request->skills);
+        } else {
+            $user->skills()->detach();
+        }
 
-    //     if ($request->has('projects')) {
-    //         $user->projects()->delete();
-    //         foreach ($request->projects as $projectData) {
-    //             if (!empty($projectData['name'])) {
-    //                 $user->projects()->create([
-    //                     'name' => $projectData['name'],
-    //                     'url' => $projectData['url'] ?? null,
-    //                     'description' => $projectData['description'] ?? null
-    //                 ]);
-    //             }
-    //         }
-    //     }
+        if ($request->has('addSkills')) {
+            foreach ($request->addSkills as $skillName) {
+                $skill = Skill::firstOrCreate(['name' => $skillName]);
+                if (!$user->skills->contains($skill->id)) {
+                    $user->skills()->attach($skill->id);
+                }
+            }
+        }
 
-    //     if ($request->has('certification')) {
+        if ($request->has('programming_languages')) {
+            $user->programmingLanguages()->sync($request->programming_languages);
+        } else {
+            $user->programmingLanguages()->detach();
+        }
 
-    //         $user->certifications()->delete();
-    //         foreach ($request->certification as $certData) {
-    //             if (!empty($certData['name'])) {
-    //                 $user->certifications()->create([
-    //                     'name' => $certData['name'],
-    //                     'url' => $certData['url'] ?? null,
-    //                     'description' => $certData['description'] ?? null
-    //                 ]);
-    //             }
-    //         }
-    //     }
-    //     $user->save();
+        if ($request->has('addProgramming_languages')) {
+            foreach ($request->addProgramming_languages as $languageName) {
+                $language = ProgrammingLanguage::firstOrCreate(['name' => $languageName]);
+                if (!$user->programmingLanguages->contains($language->id)) {
+                    $user->programmingLanguages()->attach($language->id);
+                }
+            }
+        }
 
-    //     return Redirect::route('profile.edit')->with('status', 'profile-updated');
-    // }
+        if($request->has('projects')) {
+            $user->projects()->delete();
+            foreach ($request->projects as $projectData) {
+                if (!empty($projectData['name'])) {
+                    $user->projects()->create([
+                        'name' => $projectData['name'],
+                        'url' => $projectData['url'] ?? null,
+                        'description' => $projectData['description'] ?? null
+                    ]);
+                }
+            }
+        }else{
+            $user->projects()->delete();
+        }
+
+        if ($request->has('certifications')) {
+            $user->certifications()->delete();
+            foreach ($request->certifications as $certData) {
+                if (!empty($certData['name'])) {
+                    $user->certifications()->create([
+                        'name' => $certData['name'],
+                        'url' => $certData['url'] ?? null,
+                        'description' => $certData['description'] ?? null
+                    ]);
+                }
+            }
+        }else{
+            $user->certifications()->delete();
+        }
+        $user->save();
+
+        return Redirect::route('profile.edit')->with('status', 'profile-updated');
+    }
 
     /**
      * Delete the user's account.

@@ -151,14 +151,14 @@
                 </div>
 
 
+
+                <!-- Posts -->
                 <!-- Posts -->
                 @forelse ($posts as $post)
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100" x-data="{ showEditForm: false }">
+                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100" x-data="{ showEditForm: false, showComments: false, commentContent: '' }">
                         @if($post->user_id == Auth::id())
                             <div class="flex items-center justify-end p-4 space-x-4">
-
                                 <button @click="showEditForm = !showEditForm" class="text-blue-500 hover:text-blue-700">
-                                    {{-- <x-far-edit /> --}}
                                     edit
                                 </button>
                                 <!-- Delete Button -->
@@ -166,7 +166,6 @@
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-500 hover:text-red-700">
-                                        {{-- <x-fas-trash /> --}}
                                         delete
                                     </button>
                                 </form>
@@ -182,7 +181,6 @@
                                         <p class="text-gray-400 text-xs">{{ $post->created_at->diffForHumans() }}</p>
                                     </div>
                                 </div>
-
                                 <button class="text-gray-400 hover:text-gray-600">
                                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z"/>
@@ -194,10 +192,10 @@
                                     <h3 class="font-semibold">{{ $post->title }}</h3>
                                 </div>
                             @endif
-                            @if($post->hashtags)
+                            @if($post->tags->isNotEmpty())
                                 <div class="mt-2 flex flex-wrap gap-2">
-                                    @foreach(json_decode($post->hashtags) as $hashtag)
-                                        <span class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium">#{{ $hashtag }}</span>
+                                    @foreach($post->tags as $tag)
+                                        <span class="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-medium">#{{ $tag->name }}</span>
                                     @endforeach
                                 </div>
                             @endif
@@ -207,44 +205,85 @@
                                     <div>
                                         <img src="{{ asset('storage/' . $post->image) }}" alt="Post Image " class="w-full h-64 object-cover rounded-2xl">
                                     </div>
-                                @else
-                                {{-- <div>
-                                    waaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa
-                                    </div> --}}
                                 @endif
 
+                                <!-- Like and Comment Buttons -->
                                 <div class="mt-6 flex items-center justify-between border-t pt-6">
                                     <div class="flex items-center space-x-4">
                                         <button class="like-button flex items-center space-x-2 text-gray-500 hover:text-blue-500" data-post-id="{{ $post->id }}">
-                                            <button class="flex items-center space-x-2 text-gray-500 hover:text-blue-500">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
-                                                </svg>
-                                                <span>{{ $post->likes()->count() }}</span>
-                                            </button>
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5"/>
+                                            </svg>
+                                            <span>{{ $post->likes()->count() }}</span>
+                                        </button>
 
-
-                                        <button class="flex items-center space-x-2 text-gray-500 hover:text-blue-500">
+                                        <!-- Comment Button -->
+                                        {{-- <button @click="showComments = !showComments" class="flex items-center space-x-2 text-gray-500 hover:text-blue-500">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
+                                            </svg>
+                                            <span>{{ $post->comments()->count() }}</span>
+                                        </button> --}}
+                                        <!-- Comment Button -->
+                                        <button @click="showComments = !showComments" class="flex items-center space-x-2 text-gray-500 hover:text-blue-500">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 8h10M7 12h4m1 8l-4-4H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-3l-4 4z"/>
                                             </svg>
                                             <span>{{ $post->comments()->count() }}</span>
                                         </button>
+
+
+                                        {{-- <div x-show="showComments" class="mt-4">
+
+                                            <livewire:comment-section :post="$post" />
+
+                                        </div> --}}
+                                        <div x-show="showComments" class="mt-4">
+                                            <livewire:post-comments  :post="$post" />
+                                        </div>
+
+
                                     </div>
-                                    <button class="text-gray-500 hover:text-blue-500">
-                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/>
-                                        </svg>
-                                    </button>
                                 </div>
+
+                                <!-- Display Comments Section -->
+                                {{-- <div x-show="showComments" class="mt-4">
+                                    <div class="space-y-4">
+                                        @foreach($post->comments as $comment)
+                                            <div class="flex items-start space-x-4">
+                                                <img src="{{ asset('storage/' . $comment->user->profile_picture) }}" alt="User" class="w-8 h-8 rounded-full"/>
+                                                <div>
+                                                    <div class="font-semibold text-gray-800">{{ $comment->user->name }}</div>
+                                                    <p class="text-gray-600">{{ $comment->content }}</p>
+                                                    <p class="text-gray-400 text-xs">{{ $comment->created_at->diffForHumans() }}</p>
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+
+                                    <!-- Comment Form for New Comments -->
+                                    <div class="mt-6">
+                                        <form action="{{ route('comments.store') }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="post_id" value="{{ $post->id }}">
+                                            <textarea name="content" x-model="commentContent" rows="4" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4" placeholder="Write your comment..." required></textarea>
+
+                                            <div class="mt-4 flex justify-between">
+                                                <button wire:click="addComment" type="submit" class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600" :disabled="commentContent === ''">Send</button>
+                                                <button type="button" @click="showComments = false" class="text-gray-500 hover:text-gray-700">Cancel</button>
+                                            </div>
+                                        </form>
+                                    </div>
+
+                                </div> --}}
+
                             </div>
                         </div>
-
-
+                        <!-- Edit Form -->
                         <div x-show="showEditForm">
-                            <div class="fixed -inset-20 mt-0 bg-gray-500  flex justify-center items-center z-50">
+                            <div class="fixed -inset-20 mt-0 bg-gray-500 flex justify-center items-center z-50">
                                 <div class="bg-white border-2 w-1/2 p-12">
-                                        <h3 class="text-lg font-bold text-center m-2">Update Post</h3>
+                                    <h3 class="text-lg font-bold text-center m-2">Update Post</h3>
                                     <form action="{{ route('posts.update', $post) }}" method="POST" enctype="multipart/form-data" >
                                         @csrf
                                         @method('PUT')
@@ -253,7 +292,11 @@
 
                                         <textarea name="content" rows="4" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4" required>{{ $post->content }}</textarea>
 
-                                        <input type="text" name="hashtags" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4" value="{{ implode(',', json_decode($post->hashtags)) }}" required>
+                                        {{-- <input type="text" name="hashtags" class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4" value="{{ implode(',', json_decode($post->hashtags)) }}" required> --}}
+                                        <input type="text" name="hashtags"
+                                        class="w-full p-4 border rounded-xl focus:ring-blue-500 focus:border-blue-500 mt-4"
+                                        value="{{ $post->tags->isNotEmpty() ? implode(',', $post->tags->pluck('name')->toArray()) : '' }}"
+                                        required>
 
                                         <div class="mt-4">
                                             <label for="image" class="block text-gray-600">Upload Image (optional)</label>
@@ -269,15 +312,15 @@
                             </div>
                         </div>
                     </div>
-
-
-
                 @empty
                     <div class="flex justify-center items-center h-screen"> No posts found.</div>
                 @endforelse
-                <div>
-                    {{ $posts->links() }}
-                </div>
+            <div>
+            {{ $posts->links() }}
+</div>
+
+
+
             </div>
 
             <!-- Right Sidebar -->

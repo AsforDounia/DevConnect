@@ -3,47 +3,55 @@
 namespace App\Http\Controllers;
 
 use App\Models\Post;
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
 use App\Models\Tag;
-use Illuminate\Support\Facades\Storage ;
-use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth as Auth;
+use Jorenvh\Share\Share;
 
 class PostController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-    {
-        //
+    public function index(){
+        $allPosts = Post::latest() -> paginate(5) ;
+        // $shareButtons = \Share::page(
+        //     url('/post'),
+        //     'here is the title'
+        // )->facebook()->twitter()->linkedin();
+        // dd($allPosts);
+
+        return view("dashboard", ["allPosts"=>$allPosts]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
+    public function myposts(){
+        $allPosts = Post::where('user_id', Auth::id())->latest() -> paginate(5) ;
+        return view("myposts", ["allPosts"=>$allPosts]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
-
-    public function store(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'hashtags' => 'nullable|string',
-            'image' => 'nullable|image',
+    public function store(Request $request){
+        $request->validate([
+            "content" => "required|min:5",
         ]);
+        $contentType = null;
+        $content = null;
+        if ($request -> code !== null){
+            $contentType = "code";
+            $content = $request -> code;
+        } elseif($request -> link !== null){
+            $contentType = "link";
+            $content = $request -> link;
+        } elseif ($request -> image !== null){
+            $contentType = "image";
+            $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+            $imageName = time().'.'.$request->image->extension();
+            $request->image->storeAs('post_images', $imageName, 'public');
+            $content = 'post_images/' . $imageName;
+        } else {
+            $contentType = null;
+            $content = null;
         }
-
 
         $hashtags = $request->hashtags ? array_map('trim', explode(',', $request->hashtags)) : [];
 
@@ -54,104 +62,94 @@ class PostController extends Controller
             $tagIds[] = $tag->id;
         }
 
-
         $post = Post::create([
-            'user_id' => auth()->id(),
-            'title' => $request->title,
-            'content' => $request->content,
-            'image' => $request->image ? $request->file('image')->store('posts','public') : null,
+            'user_id' => Auth::id(),
+            'shares' => 0,
+            'post_type' => $contentType,
+            'content_type' => $content,
+            'content' => $request -> content,
         ]);
-
         $post->tags()->sync($tagIds);
-
-        return redirect()->back()->with("success", "Post created successfully");
-
+        return redirect()->back();
     }
+    // public function update(Request $request,$id){
+    //     $validation = $request -> validate([
+    //         "content" => "required|min:5",
+    //     ]);
+    //     $post = Post::find($id);
+    //     $post->content = $request -> content;
+    //     $post->save();
+    //     return redirect()->back();
+    // }
 
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Post $post)
-    {
-        // Vérification de l'autorisation de modification
-        if ($post->user_id !== auth()->id()) {
-            return redirect()->route('posts.index')->with('error', 'You are not authorized to edit this post.');
-        }
+{
+    // Vérification de l'autorisation de modification
+    if ($post->user_id !== auth()->id()) {
+        return redirect()->back()->with('error', 'You are not authorized to edit this post.');
+    }
 
-        // Validation des champs
-        $validator = Validator::make($request->all(), [
-            'title' => 'required|string|max:255',
-            'content' => 'required|string',
-            'hashtags' => 'nullable|string',
-            'image' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+    $request->validate([
+        "content" => "required|min:5",
+    ]);
+
+    $contentType = null;
+    $content = null;
+
+    if ($request->code !== null) {
+        $contentType = "code";
+        $content = $request->code;
+    } elseif ($request->link !== null) {
+        $contentType = "link";
+        $content = $request->link;
+    } elseif ($request->image !== null) {
+        $contentType = "image";
+        $request->validate([
+            'image' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
+        $imageName = time().'.'.$request->image->extension();
+        $request->image->storeAs('post_images', $imageName, 'public');
+        $content = 'post_images/' . $imageName;
 
-        if ($validator->fails()) {
-            return redirect()->back()->withErrors($validator)->withInput();
+        if ($post->post_type === 'image' && $post->content_type) {
+            Storage::disk('public')->delete($post->content_type);
         }
-
-        // Mise à jour des champs de base
-        $post->title = $request->input('title');
-        $post->content = $request->input('content');
-
-        // Mise à jour des hashtags
-        if ($request->has('hashtags')) {
-            $hashtags = array_map('trim', explode(',', $request->input('hashtags')));
-
-            // Récupérer ou créer les tags
-            $tagIds = [];
-            foreach ($hashtags as $hashtag) {
-                $tag = Tag::firstOrCreate(['name' => $hashtag]);
-                $tagIds[] = $tag->id;
-            }
-
-            // Synchroniser les tags avec le post
-            $post->tags()->sync($tagIds);
-        }
-
-        // Mise à jour de l'image si une nouvelle est téléchargée
-        if ($request->hasFile('image')) {
-            if ($post->image) {
-                Storage::disk('public')->delete($post->image);
-            }
-
-            $imagePath = $request->file('image')->store('posts', 'public');
-            $post->image = $imagePath;
-        }
-
-        $post->save();
-
-        return redirect()->back()->with('success', 'Post updated successfully!');
+    } else {
+        $contentType = $post->post_type;
+        $content = $post->content_type;
     }
 
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Post $post)
-    {
-        if($post->user_id == auth()->id()){
-            $post->delete();
-            return redirect()->route('dashboard')->with('success', 'Post deleted successfully!');
-        }
-        return redirect()->back()->with('error', 'You are not authorized to delete this post!');
-
+    $hashtags = $request->hashtags ? array_map('trim', explode(',', $request->hashtags)) : [];
+    $tagIds = [];
+    foreach ($hashtags as $hashtag) {
+        $tag = Tag::firstOrCreate(['name' => $hashtag]);
+        $tagIds[] = $tag->id;
     }
+
+    // Update post
+    $post->update([
+        'post_type' => $contentType,
+        'content_type' => $content,
+        'content' => $request->content,
+    ]);
+
+    // Sync tags
+    $post->tags()->sync($tagIds);
+
+    return redirect()->back()->with('success', 'Post updated successfully!');
+}
+    public function destroy($id){
+        $post = Post::find($id);
+        if ($post -> post_type === 'image' && $post -> content_type !== null){
+            Storage::disk('public') -> delete($post -> content_type);
+        }
+        $post -> delete();
+        return redirect() -> back() -> with('post_deleted','Post deleted successfully');
+    }
+    // mark as read function
+    public function markasread(){
+        auth() -> user() -> unreadNotifications -> markAsRead();
+        return redirect() -> back();
+    }
+
 }

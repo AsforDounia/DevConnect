@@ -91,5 +91,5 @@ public function sendRequest(Request $request, User $user)
         ])->first();
         $connection->delete();
         return back();
-    } 
+    }
 }

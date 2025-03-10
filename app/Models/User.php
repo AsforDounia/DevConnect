@@ -97,4 +97,26 @@ class User extends Authenticatable
             ->where('status', 'accepte')
             ->orWhere('receiver_id', $this->id);
     }
+
+    public function messages(){
+        return $this -> hasMany(Message::class, 'sender_id');
+    }
+
+    public function messageReceived(){
+        return $this -> hasMany(Message::class, 'receiver_id');
+    }
+    public function messageSent(){
+        return $this -> hasMany(Message::class, 'sender_id');
+    }
+
+    public function conversationWith(User $otherUser)
+    {
+        return Message::where(function($query) use ($otherUser) {
+            $query->where('sender_id', $this->id)
+                  ->where('receiver_id', $otherUser->id);
+        })->orWhere(function($query) use ($otherUser) {
+            $query->where('sender_id', $otherUser->id)
+                  ->where('receiver_id', $this->id);
+        })->orderBy('created_at');
+    }
 }

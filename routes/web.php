@@ -4,6 +4,7 @@ use App\Http\Controllers\CommentController;
 use App\Http\Controllers\ConnectionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LikeController;
+use App\Http\Controllers\MessageController;
 use App\Http\Controllers\PostController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\SearchController;
@@ -38,6 +39,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/search/users', [SearchController::class, 'searchUsers'])->name('search.users');
     Route::get('/hashtags/{hashtag}', [SearchController::class, 'showHashtag'])->name('hashtags.show');
     Route::get('/search/result', [SearchController::class, 'result'])->name('search.result');
+
+    Route::get('/conversations/{user}', [MessageController::class, 'showConversation'])->name('conversations.show');
+    Route::post('/conversations', [MessageController::class, 'sendMessage'])->name('messages.store');
+    Route::get('/conversations', [MessageController::class, 'index'])->name('connections.index');
+
+
 
 });
 
